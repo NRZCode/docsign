@@ -4,11 +4,11 @@
 #         @link: https://github.com/NRZCode/pdfinfo
 #  @description: ---
 #      @license: GNU/GPL v3.0
-#      @version: 0.0.1
+#      @version: 0.0.3
 #       @author: NRZ Code <nrzcode@protonmail.com>
 #      @created: 10/03/2023 01:50
 #
-# @requirements: yad
+# @requirements: yad,poppler-utils
 #         @bugs: ---
 #        @notes: ---
 #     @revision: ---
@@ -31,7 +31,7 @@
 # USAGE
 #   pdfinfo.sh [OPTIONS]
 # -------------------------------------------
-version='0.0.1'
+version='0.0.3'
 usage='  Usage: pdfinfo.sh [OPTIONS]
 
 DESCRIPTION
@@ -44,11 +44,14 @@ OPTIONS
 '
 
 # functions ---------------------------------
+is_file() [[ -f $1 ]]
+export -f is_file
+
 getinfo() {
     filename=$1
-    [[ -f $filename ]] \
-        || filename=$(yad --title "Selecione um arquivo pdf" --file-selection --mime-filter="application/pdf") \
-        || return
+    is_file "$filename" \
+        || filename=$(yad --title 'Selecione um arquivo pdf' --width 800 --height 600 --file --file-selection --mime-filter 'application/pdf')
+    is_file "$filename" || return
     info=$(pdfinfo "$filename")
     signature=$(pdfsig "$filename")
     printf '%s\n' "1:$filename" "3:${info//$'\n'/\\n}" "4:${signature//$'\n'/\\n}"
@@ -56,20 +59,20 @@ getinfo() {
 export -f getinfo
 
 main() {
-    # FIXME: filechooser afeta apenas o field fn, não o yad --file-selection
-    #     gsettings set org.gtk.Settings.FileChooser window-size '(600, 480)'
     result=$(yad --image application-pdf --window-icon application-pdf \
-        --always-print-result \
+        --text '<b><span font="20">Informações gerais e de assinatura digital</span></b>' \
+        --text-align center \
+        --always-print-result --borders 20 \
         --buttons-layout end --button 'Abrir arquivo!gtk-open:3' --button 'Ok!gtk-ok:0' \
         --title 'PDF Info' --width 700 --height 550 --center --form \
         --field 'Arquivo:FL' '' --mime-filter='application/pdf' \
-        --field 'Carregar informações!gtk-refresh:BTN' '@bash -c "getinfo %1"' \
+        --field 'Carregar informações!gtk-refresh:FBTN' '@bash -c "getinfo %1"' \
         --field 'Info:TXT' '' \
         --field 'Assinatura:TXT' ''
     )
     if [[ $? -eq 3 ]]; then
-        IFS='|' read filename _ <<< "$result"
-        [[ -f $filename ]] && xdg-open "$filename"
+        filename=${result%%|*}
+        is_file "$filename" && xdg-open "$filename"
     fi
 }
 
