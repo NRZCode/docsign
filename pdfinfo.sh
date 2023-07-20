@@ -50,7 +50,8 @@ export -f is_file
 getinfo() {
     filename=$1
     is_file "$filename" \
-        || filename=$(yad --title 'Selecione um arquivo pdf' --width 800 --height 600 --file --file-selection --mime-filter 'application/pdf')
+        || filename=$(yad --window-icon application-pdf --title 'Selecione um arquivo pdf' --width 800 --height 600 --file --file-selection --mime-filter 'application/pdf')
+    # @TODO: select window-icon para file-selection
     is_file "$filename" || return
     info=$(pdfinfo "$filename")
     signature=$(pdfsig "$filename")
@@ -63,7 +64,7 @@ main() {
         --text '<b><span font="20">Informações gerais e de assinatura digital</span></b>' \
         --text-align center \
         --always-print-result --borders 20 \
-        --buttons-layout end --button 'Abrir arquivo!gtk-open:3' --button 'Ok!gtk-ok:0' \
+        --buttons-layout end --button 'Sair!gtk-cancel:1' --button 'Abrir arquivo!gtk-open:3' \
         --title 'PDF Info' --width 700 --height 550 --center --form \
         --field 'Arquivo:FL' '' --mime-filter='application/pdf' \
         --field 'Carregar informações!gtk-refresh:FBTN' '@bash -c "getinfo %1"' \
@@ -77,4 +78,5 @@ main() {
 }
 
 # main --------------------------------------
+yad() { /usr/bin/yad "$@"; }
 main "$@"
